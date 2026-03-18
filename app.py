@@ -1,10 +1,12 @@
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, Subscription
+from models import db, User, Subscription, Attendance
+from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'gymsecretkey123'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'gymsecretkey123')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gym.db'
 
 db.init_app(app)
@@ -64,7 +66,8 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    attendance = Attendance.query.filter_by(user_id=current_user.id).order_by(Attendance.check_in.desc()).limit(5).all()
+    return render_template('dashboard.html', attendance=attendance)
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -87,6 +90,52 @@ def my_subscription():
         flash('Subscription activated!')
         return redirect(url_for('my_subscription'))
     return render_template('my_subscription.html')
+
+@app.route('/admin')
+@login_required
+def admin():
+    if not current_user.is_admin:
+        flash('Access denied.')
+        return redirect(url_for('dashboard'))
+    members = User.query.filter_by(is_admin=False).all()
+    attendance = Attendance.query.order_by(Attendance.check_in.desc()).all()
+    return render_template('admin.html', members=members, attendance=attendance)
+
+@app.route('/admin/checkin/<int:user_id>')
+@login_required
+def checkin(user_id):
+    if not current_user.is_admin:
+        flash('Access denied.')
+        return redirect(url_for('dashboard'))
+    existing = Attendance.query.filter_by(user_id=user_id, check_out=None).first()
+    if existing:
+        flash('Member is already checked in.')
+        return redirect(url_for('admin'))
+    record = Attendance(user_id=user_id, check_in=datetime.utcnow())
+    db.session.add(record)
+    db.session.commit()
+    flash('Member checked in successfully!')
+    return redirect(url_for('admin'))
+
+@app.route('/admin/checkout/<int:user_id>')
+@login_required
+def checkout(user_id):
+    if not current_user.is_admin:
+        flash('Access denied.')
+        return redirect(url_for('dashboard'))
+    record = Attendance.query.filter_by(user_id=user_id, check_out=None).first()
+    if not record:
+        flash('Member is not checked in.')
+        return redirect(url_for('admin'))
+    record.check_out = datetime.utcnow()
+    delta = record.check_out - record.check_in
+    total_minutes = int(delta.total_seconds() // 60)
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    record.duration = f"{hours}h {minutes}m"
+    db.session.commit()
+    flash('Member checked out successfully!')
+    return redirect(url_for('admin'))
 
 with app.app_context():
     db.create_all()

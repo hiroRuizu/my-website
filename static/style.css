@@ -7,7 +7,7 @@ body {
 }
 
 nav {
-    background: #1a1a2e;
+    background: #1a1a1a;
     padding: 16px 40px;
     display: flex;
     justify-content: space-between;
@@ -15,7 +15,7 @@ nav {
 }
 
 nav .logo {
-    color: #e94560;
+    color: #f5c400;
     font-size: 22px;
     font-weight: bold;
     text-decoration: none;
@@ -33,7 +33,7 @@ nav ul li a {
     font-size: 15px;
 }
 
-nav ul li a:hover { color: #e94560; }
+nav ul li a:hover { color: #f5c400; }
 
 .container {
     max-width: 900px;
@@ -44,7 +44,7 @@ nav ul li a:hover { color: #e94560; }
 .hero {
     text-align: center;
     padding: 80px 20px;
-    background: #1a1a2e;
+    background: #1a1a1a;
     color: white;
 }
 
@@ -54,7 +54,7 @@ nav ul li a:hover { color: #e94560; }
 .btn {
     display: inline-block;
     padding: 12px 28px;
-    background: #e94560;
+    background: #f5c400;
     color: white;
     text-decoration: none;
     border-radius: 6px;
@@ -63,7 +63,7 @@ nav ul li a:hover { color: #e94560; }
     cursor: pointer;
 }
 
-.btn:hover { background: #c73652; }
+.btn:hover { background: #d4a900; }
 
 .card {
     background: white;
@@ -91,7 +91,7 @@ nav ul li a:hover { color: #e94560; }
 }
 
 .plan-card h2 { margin-bottom: 8px; }
-.plan-card .price { font-size: 32px; font-weight: bold; color: #e94560; margin: 16px 0; }
+.plan-card .price { font-size: 32px; font-weight: bold; color: #f5c400; margin: 16px 0; }
 .plan-card ul { list-style: none; margin-bottom: 24px; }
 .plan-card ul li { padding: 4px 0; color: #555; }
 

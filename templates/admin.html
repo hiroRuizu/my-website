@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h1>Admin Dashboard</h1>
+        <p style="margin-top:8px;color:#555;">Manage member attendance.</p>
+    </div>
+
+    <div class="card">
+        <h2>Members</h2>
+        <table style="width:100%;border-collapse:collapse;margin-top:16px;">
+            <thead>
+                <tr style="background:#1a1a1a;color:white;">
+                    <th style="padding:10px;text-align:left;">Name</th>
+                    <th style="padding:10px;text-align:left;">Email</th>
+                    <th style="padding:10px;text-align:left;">Subscription</th>
+                    <th style="padding:10px;text-align:left;">Status</th>
+                    <th style="padding:10px;text-align:left;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:10px;">{{ member.name }}</td>
+                    <td style="padding:10px;">{{ member.email }}</td>
+                    <td style="padding:10px;">{{ member.subscription.plan if member.subscription else 'None' }}</td>
+                    <td style="padding:10px;">
+                        {% set active = member.attendance|selectattr('check_out', 'none')|list %}
+                        {% if active %}
+                            <span class="badge badge-active">In Gym</span>
+                        {% else %}
+                            <span class="badge badge-inactive">Not In</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:10px;">
+                        <a href="/admin/checkin/{{ member.id }}" class="btn" style="padding:6px 14px;font-size:13px;">Check In</a>
+                        <a href="/admin/checkout/{{ member.id }}" class="btn" style="padding:6px 14px;font-size:13px;background:#555;margin-left:6px;">Check Out</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Attendance Log</h2>
+        <table style="width:100%;border-collapse:collapse;margin-top:16px;">
+            <thead>
+                <tr style="background:#1a1a1a;color:white;">
+                    <th style="padding:10px;text-align:left;">Member</th>
+                    <th style="padding:10px;text-align:left;">Check In</th>
+                    <th style="padding:10px;text-align:left;">Check Out</th>
+                    <th style="padding:10px;text-align:left;">Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in attendance %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:10px;">{{ record.user.name }}</td>
+                    <td style="padding:10px;">{{ record.check_in.strftime('%b %d, %Y %I:%M %p') }}</td>
+                    <td style="padding:10px;">{{ record.check_out.strftime('%b %d, %Y %I:%M %p') if record.check_out else '—' }}</td>
+                    <td style="padding:10px;">{{ record.duration if record.duration else 'In progress' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -19,5 +19,31 @@
             </div>
         </a>
     </div>
+
+    <div class="card" style="margin-top:24px;">
+        <h2>My Recent Attendance</h2>
+        {% if attendance %}
+        <table style="width:100%;border-collapse:collapse;margin-top:16px;">
+            <thead>
+                <tr style="background:#1a1a1a;color:white;">
+                    <th style="padding:10px;text-align:left;">Check In</th>
+                    <th style="padding:10px;text-align:left;">Check Out</th>
+                    <th style="padding:10px;text-align:left;">Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in attendance %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:10px;">{{ record.check_in.strftime('%b %d, %Y %I:%M %p') }}</td>
+                    <td style="padding:10px;">{{ record.check_out.strftime('%b %d, %Y %I:%M %p') if record.check_out else '—' }}</td>
+                    <td style="padding:10px;">{{ record.duration if record.duration else 'In progress' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="margin-top:16px;color:#555;">No attendance records yet.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
