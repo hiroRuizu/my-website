@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h1>Welcome back, {{ current_user.name }}!</h1>
+        <p style="margin-top:8px;color:#555;">Here's your member overview.</p>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <a href="/profile" style="text-decoration:none;flex:1;">
+            <div class="card" style="text-align:center;cursor:pointer;">
+                <h2>My Profile</h2>
+                <p style="color:#555;margin-top:8px;">View and edit your info</p>
+            </div>
+        </a>
+        <a href="/my-subscription" style="text-decoration:none;flex:1;">
+            <div class="card" style="text-align:center;cursor:pointer;">
+                <h2>My Subscription</h2>
+                <p style="color:#555;margin-top:8px;">Check your current plan</p>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

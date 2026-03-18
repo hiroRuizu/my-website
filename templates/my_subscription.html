@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width:600px;">
+    <div class="card">
+        <h2>My Subscription</h2>
+        {% if current_user.subscription %}
+        <div style="margin-top:24px;">
+            <p><strong>Current plan:</strong> {{ current_user.subscription.plan }}</p>
+            <p style="margin-top:12px;"><strong>Status:</strong>
+                {% if current_user.subscription.status == 'active' %}
+                    <span class="badge badge-active">Active</span>
+                {% else %}
+                    <span class="badge badge-inactive">Inactive</span>
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+
+        <h3 style="margin-top:32px;margin-bottom:16px;">Change your plan</h3>
+        <form method="POST" action="/my-subscription">
+            <div class="form-group">
+                <label>Select a plan</label>
+                <select name="plan" style="width:100%;padding:10px 14px;border:1px solid #ccc;border-radius:6px;font-size:15px;">
+                    <option value="Basic" {% if current_user.subscription.plan == 'Basic' %}selected{% endif %}>Basic — ₱499/mo</option>
+                    <option value="Pro" {% if current_user.subscription.plan == 'Pro' %}selected{% endif %}>Pro — ₱899/mo</option>
+                    <option value="Elite" {% if current_user.subscription.plan == 'Elite' %}selected{% endif %}>Elite — ₱1,499/mo</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">Activate plan</button>
+        </form>
+
+        <a href="/dashboard" style="display:block;margin-top:16px;color:#555;">Back to dashboard</a>
+    </div>
+</div>
+{% endblock %}
