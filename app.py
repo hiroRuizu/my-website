@@ -7,7 +7,11 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'gymsecretkey123')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gym.db'
+import os
+uri = os.environ.get('DATABASE_URL', 'sqlite:///gym.db')
+if uri.startswith('postgres://'):
+    uri = uri.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
 
 db.init_app(app)
 login_manager = LoginManager(app)
