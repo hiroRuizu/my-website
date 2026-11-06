@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Subscription, Attendance
@@ -96,14 +96,70 @@ def my_subscription():
     return render_template('my_subscription.html')
 
 @app.route('/admin')
-@login_required
 def admin():
-    if not current_user.is_admin:
-        flash('Access denied.')
-        return redirect(url_for('dashboard'))
+    return render_template('admin_loading.html')
+
+@app.route('/api/admin/check-auth')
+def check_admin_auth():
+    """Check if user is authenticated as admin"""
+    return jsonify({
+        'authenticated': current_user.is_authenticated and current_user.is_admin
+    })
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    """API endpoint for admin login"""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    user = User.query.filter_by(email=email).first()
+    if user and check_password_hash(user.password, password) and user.is_admin:
+        login_user(user)
+        return jsonify({
+            'authenticated': True,
+            'message': 'Login successful'
+        })
+    else:
+        return jsonify({
+            'authenticated': False,
+            'message': 'Invalid email or password'
+        })
+
+@app.route('/api/admin/data')
+def get_admin_data():
+    """Get admin dashboard data"""
+    if not current_user.is_authenticated or not current_user.is_admin:
+        return jsonify({'authenticated': False})
+    
     members = User.query.filter_by(is_admin=False).all()
     attendance = Attendance.query.order_by(Attendance.check_in.desc()).all()
-    return render_template('admin.html', members=members, attendance=attendance)
+    
+    members_data = []
+    for member in members:
+        active_records = Attendance.query.filter_by(user_id=member.id, check_out=None).first()
+        members_data.append({
+            'id': member.id,
+            'name': member.name,
+            'email': member.email,
+            'subscription': member.subscription.plan if member.subscription else 'None',
+            'active': active_records is not None
+        })
+    
+    attendance_data = []
+    for record in attendance:
+        attendance_data.append({
+            'member_name': record.user.name,
+            'check_in': record.check_in.strftime('%b %d, %Y %I:%M %p'),
+            'check_out': record.check_out.strftime('%b %d, %Y %I:%M %p') if record.check_out else None,
+            'duration': record.duration
+        })
+    
+    return jsonify({
+        'authenticated': True,
+        'members': members_data,
+        'attendance': attendance_data
+    })
 
 @app.route('/admin/checkin/<int:user_id>')
 @login_required

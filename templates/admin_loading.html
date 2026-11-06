@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+    }
+
+    .loading-spinner {
+        text-align: center;
+    }
+
+    .spinner {
+        border: 4px solid #f4f4f4;
+        border-top: 4px solid #f5c400;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 24px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-spinner p {
+        color: #555;
+        font-size: 16px;
+    }
+
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 32px;
+        border-radius: 10px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-content h2 {
+        margin-bottom: 24px;
+        color: #222;
+    }
+
+    .modal-content form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-content .form-group {
+        margin-bottom: 16px;
+    }
+
+    .modal-content .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: bold;
+        color: #222;
+    }
+
+    .modal-content .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+    }
+
+    .modal-content .btn {
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .modal-error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        display: none;
+    }
+
+    .modal-error.show {
+        display: block;
+    }
+
+    .admin-content {
+        display: none;
+    }
+
+    .admin-content.show {
+        display: block;
+    }
+</style>
+
+<div class="loading-container" id="loadingScreen">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading admin panel...</p>
+    </div>
+</div>
+
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <h2>Admin Login</h2>
+        <div class="modal-error" id="errorMessage"></div>
+        <form id="loginForm" method="POST">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" id="loginEmail" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+</div>
+
+<div class="admin-content" id="adminContent">
+    <div class="container">
+        <div class="card">
+            <h1>Admin Dashboard</h1>
+            <p style="margin-top:8px;color:#555;">Manage member attendance.</p>
+        </div>
+
+        <div class="card">
+            <h2>Members</h2>
+            <table style="width:100%;border-collapse:collapse;margin-top:16px;">
+                <thead>
+                    <tr style="background:#1a1a1a;color:white;">
+                        <th style="padding:10px;text-align:left;">Name</th>
+                        <th style="padding:10px;text-align:left;">Email</th>
+                        <th style="padding:10px;text-align:left;">Subscription</th>
+                        <th style="padding:10px;text-align:left;">Status</th>
+                        <th style="padding:10px;text-align:left;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="membersTable">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Attendance Log</h2>
+            <table style="width:100%;border-collapse:collapse;margin-top:16px;">
+                <thead>
+                    <tr style="background:#1a1a1a;color:white;">
+                        <th style="padding:10px;text-align:left;">Member</th>
+                        <th style="padding:10px;text-align:left;">Check In</th>
+                        <th style="padding:10px;text-align:left;">Check Out</th>
+                        <th style="padding:10px;text-align:left;">Duration</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Check authentication status on page load
+    async function checkAuthAndLoadAdmin() {
+        try {
+            const response = await fetch('/api/admin/check-auth');
+            const data = await response.json();
+
+            if (data.authenticated) {
+                // User is authenticated, load admin data
+                await loadAdminData();
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('adminContent').classList.add('show');
+            } else {
+                // User not authenticated, show login modal
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('loginModal').classList.add('show');
+            }
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            // On error, show login modal
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('loginModal').classList.add('show');
+        }
+    }
+
+    async function loadAdminData() {
+        try {
+            const response = await fetch('/api/admin/data');
+            const data = await response.json();
+
+            if (!data.authenticated) {
+                // Session expired, show login modal
+                document.getElementById('adminContent').classList.remove('show');
+                document.getElementById('loginModal').classList.add('show');
+                return;
+            }
+
+            // Populate members table
+            const membersTable = document.getElementById('membersTable');
+            membersTable.innerHTML = '';
+            data.members.forEach(member => {
+                const status = member.active ? 'In Gym' : 'Not In';
+                const statusClass = member.active ? 'badge-active' : 'badge-inactive';
+                const row = `
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:10px;">${member.name}</td>
+                        <td style="padding:10px;">${member.email}</td>
+                        <td style="padding:10px;">${member.subscription}</td>
+                        <td style="padding:10px;"><span class="badge ${statusClass}">${status}</span></td>
+                        <td style="padding:10px;">
+                            <a href="/admin/checkin/${member.id}" class="btn" style="padding:6px 14px;font-size:13px;">Check In</a>
+                            <a href="/admin/checkout/${member.id}" class="btn" style="padding:6px 14px;font-size:13px;background:#555;margin-left:6px;">Check Out</a>
+                        </td>
+                    </tr>
+                `;
+                membersTable.innerHTML += row;
+            });
+
+            // Populate attendance table
+            const attendanceTable = document.getElementById('attendanceTable');
+            attendanceTable.innerHTML = '';
+            data.attendance.forEach(record => {
+                const row = `
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:10px;">${record.member_name}</td>
+                        <td style="padding:10px;">${record.check_in}</td>
+                        <td style="padding:10px;">${record.check_out || '—'}</td>
+                        <td style="padding:10px;">${record.duration || 'In progress'}</td>
+                    </tr>
+                `;
+                attendanceTable.innerHTML += row;
+            });
+        } catch (error) {
+            console.error('Failed to load admin data:', error);
+            document.getElementById('errorMessage').textContent = 'Failed to load admin data';
+            document.getElementById('errorMessage').classList.add('show');
+        }
+    }
+
+    // Handle login form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorMsg = document.getElementById('errorMessage');
+
+        try {
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.authenticated) {
+                errorMsg.classList.remove('show');
+                document.getElementById('loginModal').classList.remove('show');
+                await loadAdminData();
+                document.getElementById('adminContent').classList.add('show');
+            } else {
+                errorMsg.textContent = data.message || 'Invalid email or password';
+                errorMsg.classList.add('show');
+            }
+        } catch (error) {
+            console.error('Login failed:', error);
+            errorMsg.textContent = 'Login failed. Please try again.';
+            errorMsg.classList.add('show');
+        }
+    });
+
+    // Check auth on page load
+    checkAuthAndLoadAdmin();
+</script>
+{% endblock %}
